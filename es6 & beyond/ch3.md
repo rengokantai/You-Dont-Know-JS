@@ -82,7 +82,7 @@ it.next();		// { value: 3, done: false }
 it.next();		// { value: undefined, done: true }
 ```
 
-Each time the method at `Symbol.iterator` is invoked on this `arr` value, it will produce a new fresh iterator. Most structures will do the same, including all the built-in data structures in JS.
+Each time the method located at `Symbol.iterator` (see Chapter 2 and 7) is invoked on this `arr` value, it will produce a new fresh iterator. Most structures will do the same, including all the built-in data structures in JS.
 
 However, it *is* possible to conceive of a structure which could only produce a single iterator (singleton pattern), or perhaps only allow one unique iterator at a time, requiring the current one to be
 
@@ -1707,6 +1707,14 @@ f.gimmeXY();				// 75
 
 **Warning:** Though `class Foo` is much like `function Foo`, there are important differences. The `Foo(..)` call *must* be made with `new` -- a pre-ES6 approach of `Foo.call( obj )` will *not* work. Also, while `function Foo` is "hoisted" (see the *Scope & Closures* title of this series), `class Foo` is not; the `extends ..` clause specifies an expression that cannot be "hoisted". So, you must declare a `class` before you can instantiate it.
 
+The established `instanceof` operator still works with ES6 classes, since `class` just creates a constructor function of the same name. However, ES6 introduces a way to customize how `instanceof` works, using `Symbol.hasInstance` (see "Well Known Symbols" in Chapter 7).
+
+Another way of thinking about `class`, which I find more convenient, is as a *macro* that is used to automatically populate a `prototype` object. Optionally, it also wires up the `[[Prototype]]` relationship if using `extends` (see the next section).
+
+An ES6 `class` isn't really an entity itself, but a meta concept that wraps around other concrete entities like functions and properties and ties them together.
+
+**Tip:** In addition to the declaration form, a `class` can also be an expression, as in: `var x = class Y { .. }`. This is primarily useful for passing a class definition (technically, the constructor itself) as a function argument or assigning it to an object property.
+
 ### `extends` and `super`
 
 ES6 classes also have syntax sugar for establishing the `[[Prototype]]` delegation link between two function prototypes -- commonly mislabeled "inheritance" or confusingly labeled "prototype inheritance" -- using the class-oriented familiar terminology `extends`:
@@ -1885,7 +1893,7 @@ The `ouch` custom error object in this previous snippet will behave like any oth
 
 ### `new.target`
 
-ES6 introduces a new concept called a "metaproperty", in the form of `new.target`. If that looks strange, it is; pairing a keyword with a `.` and a property name is definitely out of the ordinary pattern for JS.
+ES6 introduces a new concept called a "Meta Property", in the form of `new.target`. If that looks strange, it is; pairing a keyword with a `.` and a property name is definitely out of the ordinary pattern for JS.
 
 `new.target` is a new "magical" value available in all functions, though in normal functions it will always be `undefined`. In any constructor, `new.target` always points at the constructor `new` directly invoked, even if the constructor is in a parent class and was delegated to by a `super(..)` call from a child constructor. Consider:
 
@@ -1917,7 +1925,7 @@ b.baz();
 // baz: undefined
 ```
 
-The `new.target` metaproperty doesn't have much purpose in class constructors, except accessing a static property/method (see the next section).
+The `new.target` meta property doesn't have much purpose in class constructors, except accessing a static property/method (see the next section).
 
 If `new.target` is `undefined`, you know the function was not called with `new`. You can then force a `new` invocation if that's necessary.
 
@@ -1973,7 +1981,7 @@ To illustrate how a parent class method can use a child's species declaration so
 
 ```js
 class Foo {
-	// `return this` defers `species` to derived constructor
+	// defer `species` to derived constructor
 	static get [Symbol.species]() { return this; }
 	spawn() {
 		return new this.constructor[Symbol.species]();

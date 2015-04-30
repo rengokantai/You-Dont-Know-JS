@@ -610,7 +610,7 @@ console.log( x, y, z );				// 4 5 6
 
 The variables can already be declared, and then the destructuring only does assignments, exactly as we've already seen.
 
-**Note:** For the object destructuring form specifically, when leaving off a `var`/`let`/`const` declarator, we had to surround the whole assignment expression in `( )`, because the `{ .. }` on the left-hand side is taken to be a statement block instead of an object.
+**Note:** For the object destructuring form specifically, when leaving off a `var`/`let`/`const` declarator, we had to surround the whole assignment expression in `( )`, because otherwise the `{ .. }` on the left-hand side as the first element in the statement is taken to be a statement block instead of an object.
 
 In fact, the assignment expressions (`a`, `y`, etc.) don't actually need to be just variable identifiers. Anything that's a valid assignment expression is valid. For example:
 
@@ -692,6 +692,46 @@ console.log( x, y );				// 20 10
 ```
 
 **Warning:** Be careful not try to mix in declaration with assignment unless you want all of the assignment expressions *also* to be treated as declarations. Otherwise, you'll get syntax errors. That's why in the earlier example I had to do `var a2 = []` separately from the `[ a2[0], .. ] = ..` destructuring assignment. It wouldn't make any sense to try `var [ a2[0], .. ] = ..`, since `a2[0]` isn't a valid declaration identifier; it also obviously couldn't implicitly create a `var a2 = []` declaration.
+
+#### Destructuring Assignment Expressions
+
+The assignment expression with object or array destructuring has as its completion value the full right-hand object/array value. Consider:
+
+```js
+var o = { a:1, b:2, c:3 },
+	a, b, c, p;
+
+p = {a,b,c} = o;
+
+console.log( a, b, c );			// 1 2 3
+p === o;						// true
+```
+
+In the previous snippet, `p` was assigned the `o` object reference, not one of the `a`, `b`, or `c` values. The same is true of array destructuring:
+
+```js
+var o = [1,2,3],
+	a, b, c, p;
+
+p = [a,b,c] = o;
+
+console.log( a, b, c );			// 1 2 3
+p === o;						// true
+```
+
+By carrying the object/array value through as the completion, you can chain destructuring assignment expressions together:
+
+```js
+var o = { a:1, b:2, c:3 },
+	p = [4,5,6],
+	a, b, c, x, y, z;
+
+({a} = {b,c} = o);
+[x,y] = [z] = p;
+
+console.log( a, b, c );			// 1 2 3
+console.log( x, y, z );			// 4 5 4
+```
 
 ### Too Many, Too Few, Just Enough
 
@@ -1105,6 +1145,14 @@ var o = {
 
 **Warning:** While `x() { .. }` seems to just be shorthand for `x: function(){ .. }`, concise methods have special behaviors that their older counterparts don't; specifically, the allowance for `super` (see "Object `super`" later in this chapter).
 
+Generators (see Chapter 4) also have a concise method form:
+
+```js
+var o = {
+	*foo() { .. }
+};
+```
+
 #### Concisely Unnamed
 
 While that convenience shorthand is quite attractive, there's a subtle gotcha to be aware of. To illustrate, let's examine pre-ES6 code like the following, which you might try to refactor to use concise methods:
@@ -1319,6 +1367,15 @@ var o = {
 ```
 
 `Symbol.toStringTag` is a special built-in value, which we evaluate with the `[ .. ]` syntax, so we can assign the `"really cool thing"` value to the special property name.
+
+Computed property names can also appear as the name of a concise method or a concise generator:
+
+```js
+var o = {
+	["f" + "oo"]() { .. }	// computed concise method
+	*["b" + "ar"]() { .. }	// computed concise generator
+};
+```
 
 ### Setting `[[Prototype]]`
 
@@ -1853,7 +1910,7 @@ for (var val, ret, it = a[Symbol.iterator]();
 // "a" "b" "c" "d" "e"
 ```
 
-Under the covers, the `for..of` loop asks the iterable for an iterator, then it repeatedly calls the iterator and assigns its produced value to the loop iteration variable.
+Under the covers, the `for..of` loop asks the iterable for an iterator (using the built-in `Symbol.iterator` -- see "Well Known Symbols" in Chapter 7), then it repeatedly calls the iterator and assigns its produced value to the loop iteration variable.
 
 Standard built-in values in JavaScript that are by default iterables (or provide them) include:
 
@@ -2635,7 +2692,9 @@ var a = [1,2,3];
 a[Symbol.iterator];			// native function
 ```
 
-The specification uses the `@@` prefix notation to refer to the built-in symbols, the most common ones being: `@@iterator`, `@@toStringTag`, `@@toPrimitive`. Several others are defined as well, though they probably won't be used as often. See "Built-in Object Symbols" in Chapter 7 for detailed information about how these are used for metaprogramming purposes.
+The specification uses the `@@` prefix notation to refer to the built-in symbols, the most common ones being: `@@iterator`, `@@toStringTag`, `@@toPrimitive`. Several others are defined as well, though they probably won't be used as often.
+
+**Note:** See "Well Known Symbols" in Chapter 7 for detailed information about how these built-in symbols are used for meta programming purposes.
 
 ## Review
 

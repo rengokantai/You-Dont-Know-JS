@@ -42,10 +42,12 @@
 	* `String`
 * Chapter 7: Meta Programming
 	* Function Names
-	* Built-in Object Symbols
-	* `Reflect` API
+	* Meta Properties
+	* Well Known Symbols
 	* Proxies
-	* Tail Call Optimization
+	* `Reflect` API
+	* Feature Testing
+	* Tail Call Optimization (TCO)
 * Chapter 8: Beyond ES6
 	* `async` Functions
 	* `Object.observe(..)`
