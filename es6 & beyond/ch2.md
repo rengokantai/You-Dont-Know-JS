@@ -115,7 +115,7 @@ One last gotcha: `typeof` behaves differently with *TDZ* variables than it does 
 		console.log( "cool" );
 	}
 
-	if (typeof b === "undefined") {		// TypeError!
+	if (typeof b === "undefined") {		// ReferenceError!
 		// ..
 	}
 
@@ -491,8 +491,6 @@ console.log( a, b, c );				// 1 2 3
 
 As you can see, we created a manual assignment of the values in the array that `foo()` returns to individual variables `a`, `b`, and `c`, and to do so we (unfortunately) needed the `tmp` variable.
 
-This pattern is widely called *array destructuring assignment*, or as I prefer, *structured array assignment*.
-
 We can do similar with objects:
 
 ```js
@@ -510,9 +508,11 @@ var tmp = bar(),
 console.log( x, y, z );				// 4 5 6
 ```
 
-The `tmp.x` property value is assigned to the `x` variable, and likewise for `tmp.y` to `y` and `tmp.z` to `z`. Of course, this is generally referred to as *object destructuring assignment*, or my alternate description: *structured object assignment*.
+The `tmp.x` property value is assigned to the `x` variable, and likewise for `tmp.y` to `y` and `tmp.z` to `z`.
 
-ES6 introduces a destructuring syntax which eliminates the need for the `tmp` variable in the previous snippets, making them much cleaner. Consider:
+Manually assigning indexed values from an array or properties from an object can be thought of as *structured assignment*. To put this into ES6 terms, it's called *destructuring assignment*.
+
+Specifically, ES6 introduces dedicated syntax for *array destructuring* and *object destructuring*, which eliminates the need for the `tmp` variable in the previous snippets, making them much cleaner. Consider:
 
 ```js
 var [ a, b, c ] = foo();
@@ -1009,9 +1009,9 @@ You can of course do so manually, as probably some of you have done in the past:
 ```js
 config.options = config.options || {};
 config.options.remove = (config.options.remove !== undefined) ?
-	config.options.remove : default.options.remove;
+	config.options.remove : defaults.options.remove;
 config.options.enable = (config.options.enable !== undefined) ?
-	config.options.enable : default.options.enable;
+	config.options.enable : defaults.options.enable;
 ...
 ```
 
@@ -1858,6 +1858,10 @@ Bottom line: `=>` is about lexical binding of `this`, `arguments`, and `super`. 
 Don't believe any hype that `=>` is primarily, or even mostly, about fewer keystrokes. Whether you save keystrokes or waste them, you should know exactly what you are intentionally doing with every character typed.
 
 **Tip:** If you have a function that for any of these articulated reasons is not a good match for an `=>` arrow function, but it's being declared as part of an object literal, recall from "Concise Methods" earlier in this chapter that there's another option for shorter function syntax.
+
+If you prefer a visual decision chart for how/why to pick an arrow function:
+
+<img src="fig1.png">
 
 ## `for..of` Loops
 
