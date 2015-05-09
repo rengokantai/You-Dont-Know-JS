@@ -205,13 +205,54 @@ You are not allowed to change the value of the variable once it's been set, at d
 
 The `a` variable doesn't actually hold a *constant* array, it holds a *constant* reference to the array; the array itself is freely mutable.
 
-**Warning:** Assigning an object or array as a constant means that value will never be able to be garbage collected, since the reference to the value can never be unset. That may be desirable, but be careful if it's not your intent!
+**Warning:** Assigning an object or array as a constant means that value will not be able to be garbage collected until that constant's lexical scope goes away, since the reference to the value can never be unset. That may be desirable, but be careful if it's not your intent!
 
 Essentially, `const` declarations enforce what we've stylistically signaled with our code for years, where we declared a variable name of all uppercase letters and assigned it some literal value that we took care never to change. There's no enforcement on a `var` assignment, but there is now with a `const` assignment, which can help you catch unintended changes.
 
 There's some rumored assumptions that a `const` likely will be more optimizable for the JS engine than a `let` or `var` would be, since the engine knows the variable will never change so it can eliminate some possible tracking.
 
 Whether that is the case or just our own fantasies and intuitions, the much more important decision to make is if you intend *constant* behavior or not. Don't just use `const` on variables that otherwise don't obviously appear to be treated as *constants* in the code, as that will just lead to more confusion.
+
+### Block-scoped Functions
+
+Starting with ES6, function declarations that occur inside of blocks are now specified to be scoped to that block. Prior to ES6, the specification did not call for this, but many implementations did it anyway. So now the specification meets reality.
+
+Consider:
+
+```js
+{
+	foo();					// works!
+
+	function foo() {
+		// ..
+	}
+}
+
+foo();						// ReferenceError
+```
+
+The `foo()` function is declared inside the `{ .. }` block, and as of ES6 is block-scoped there. So it's not available outside that block. But also note that it is "hoisted" within the block, as opposed to `let` declarations which suffer the TDZ error trap mentioned earlier.
+
+Block-scoping of function declarations could be a problem if you've ever written code like this before, and relied on the old legacy non-block-scoped behavior:
+
+```js
+if (something) {
+	function foo() {
+		console.log( "1" );
+	}
+}
+else {
+	function foo() {
+		console.log( "2" );
+	}
+}
+
+foo();		// ??
+```
+
+In pre-ES6 compliant environments, `foo()` would print `"2"` regardless of the value of `something`, since both function declarations were hoisted out of the blocks, and the second one always wins.
+
+In ES6, that last line throws a `ReferenceError`.
 
 ## Spread / Rest
 
