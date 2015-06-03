@@ -300,13 +300,6 @@ var vals = [ ...m.values() ];
 vals;							// ["foo","bar"]
 ```
 
-To determine if a value exists in a map, use the `includes(..)` method (which is the same as on standard arrays as of ES6):
-
-```js
-m.includes( "foo" );			// true
-m.includes( "baz" );			// false
-```
-
 As discussed in the previous section, you can iterate over a map's entries using `entries()` (or the default map iterator). Consider:
 
 ```js
@@ -408,7 +401,7 @@ For this reason, WeakMaps are in my opinion better named "WeakKeyMaps."
 
 ## Sets
 
-A set is an a collection of unique values (duplicates are ignored).
+A set is a collection of unique values (duplicates are ignored).
 
 The API for a set is mostly identical to map. The `add(..)` method takes the place of the `set(..)` method (somewhat ironically), and there is no `get(..)` method.
 
