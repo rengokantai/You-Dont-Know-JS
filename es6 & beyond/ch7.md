@@ -292,7 +292,7 @@ If you need to define methods that generate new instances, use the meta programm
 
 In the *Types & Grammar* title of this series, we discussed the `ToPrimitive` abstract coercion operation, which is used when an object must be coerced to a primitive value for some operation (such as `==` comparison or `+` addition). Prior to ES6, there was no way to control this behavior.
 
-As of ES6, the `@@toPrimitive` symbol as a property on any object value can customize that `ToPrimitve` coercion by specifying a method.
+As of ES6, the `@@toPrimitive` symbol as a property on any object value can customize that `ToPrimitive` coercion by specifying a method.
 
 Consider:
 
@@ -487,7 +487,7 @@ Perhaps in the future, more of these underlying fundamental operations in the la
 
 ### Revocable Proxies
 
-A regular proxy always traps for the target object, and cannot be modified after creation -- as long as a reference is kept to the proxy, proxying remains possible. However, there may be cases where you want to create a proxy that can be used only for a certain period of time and then disabled. The solution is to create a *revocable proxy*:
+A regular proxy always traps for the target object, and cannot be modified after creation -- as long as a reference is kept to the proxy, proxying remains possible. However, there may be cases where you want to create a proxy that can be disabled when you want to stop allowing it to proxy. The solution is to create a *revocable proxy*:
 
 ```js
 var obj = { a: 1 },
@@ -518,6 +518,8 @@ A revocable proxy is created with `Proxy.revocable(..)`, which is a regular func
 The return value of `Proxy.revocable(..)` is not the proxy itself as with `new Proxy(..)`. Instead, it's an object with two properties: *proxy* and *revoke* -- we used object destructuring (see "Destructuring" in Chapter 2) to assign these properties to `pobj` and `prevoke()` variables, respectively.
 
 Once a revocable proxy is revoked, any attempts to access it (trigger any of its traps) will throw a `TypeError`.
+
+An example of using a revocable proxy might be handing out a proxy to another party in your application that manages data in your model, instead of giving them a reference to the real model object itself. If your model object changes or is replaced, you want to invalidate the proxy you handed out so the other party knows (via the errors!) to request an updated reference to the model.
 
 ### Using Proxies
 
@@ -559,7 +561,7 @@ var messages = [],
 		}
 	},
 	messages_proxy =
-		new Proxy( results, handlers );
+		new Proxy( messages, handlers );
 
 // elsewhere:
 messages_proxy.push(
@@ -609,7 +611,7 @@ greeter.speak( "world" );		// hello world
 greeter.everyone();				// hello everyone!
 ```
 
-We interact directly with `greeter` instead of `catchall`. When we call `speak(..)`, it's found on `greeter` and used directly. But when we try to access a method like `everyone()`, that function doesn't exist on `person`.
+We interact directly with `greeter` instead of `catchall`. When we call `speak(..)`, it's found on `greeter` and used directly. But when we try to access a method like `everyone()`, that function doesn't exist on `greeter`.
 
 The default object property behavior is to check up the `[[Prototype]]` chain (see the *this & Object Prototypes* title of this series), so `catchall` is consulted for an `everyone` property. The proxy `get()` handler then kicks in and returns a function that calls `speak(..)` with the name of the property being accessed (`"everyone"`).
 
@@ -1030,9 +1032,9 @@ JavaScript engines have to set an arbitrary limit to prevent such programming te
 
 Certain patterns of function calls, called *tail calls*, can be optimized in a way to avoid the extra allocation of stack frames. If the extra allocation can be avoided, there's no reason to arbitrarily limit the call stack depth, so the engines can let them run unbounded.
 
-It's important to note that this optimization can only be applied in `strict` mode. Yet another reason to always be writing all your code as `strict`!
+A tail call is a `return` statement with a function call, where nothing has to happen after the call except returning its value.
 
-A tail call is a function call in the tail position -- at the end of a function's code path -- where nothing has to happen after the call except (optionally) returning its value along to a previous function invocation.
+This optimization can only be applied in `strict` mode. Yet another reason to always be writing all your code as `strict`!
 
 Here's a function call that is *not* in tail position:
 
@@ -1078,7 +1080,7 @@ bar( 15 );				// 32
 
 In this program, `bar(..)` is clearly recursive, but `foo(..)` is just a regular function call. In both cases, the function calls are in *proper tail position*. The `x + 1` is evaluated before the `bar(..)` call, and whenever that call finishes, all that happens is the `return`.
 
-Proper Tail Calls (PTC) of these forms can be optimized -- called tail call optimization (TCO) -- so that the stack frame allocation is unnecessary. Instead of creating a new stack frame for the next function call, the engine just reuses the existing stack frame. That works because a function doesn't need to preserve any of the current state, as nothing happens with that state after the PTC.
+Proper Tail Calls (PTC) of these forms can be optimized -- called tail call optimization (TCO) -- so that the extra stack frame allocation is unnecessary. Instead of creating a new stack frame for the next function call, the engine just reuses the existing stack frame. That works because a function doesn't need to preserve any of the current state, as nothing happens with that state after the PTC.
 
 TCO means there's practically no limit to how deep the call stack can be. That trick slightly improves regular function calls in normal programs, but more importantly opens the door to using recursion for program expression even if the call stack could be tens of thousands of calls deep.
 
@@ -1090,7 +1092,7 @@ As of ES6, all PTC should be optimizable in this way, recursion or not.
 
 The hitch, however, is that only PTC can be optimized; non-PTC will still work of course, but will cause stack frame allocation as they always did. You'll have to be careful about structuring your functions with PTC if you expect the optimizations to kick in.
 
-If you have a function that's not written with PTC, you may find the need to manually prepare your program for TCO.
+If you have a function that's not written with PTC, you may find the need to manually rearrange your code to be eligible for TCO.
 
 Consider:
 
@@ -1162,7 +1164,7 @@ foo( 123456 );			// 3810376848.5
 
 This reworking required minimal changes to factor out the recursion into the loop in `trampoline(..)`:
 
-1. First, we wrapped the `return _foo ..` line in the `partial()` function expression.
+1. First, we wrapped the `return _foo ..` line in the `return partial() { ..` function expression.
 2. Then we wrapped the `_foo(1,x)` call in the `trampoline(..)` call.
 
 The reason this technique doesn't suffer the call stack limitiation is that each of those inner `partial(..)` functions is just returned back to the `while` loop in `trampoline(..)`, which runs it and then loop iterates again. In other words, `partial(..)` doesn't recursively call itself, it just returns another function. The stack depth remains constant, so it can run as long as it needs to.
@@ -1199,9 +1201,7 @@ If you write your algorithms with PTC, the ES6 engine will apply TCO to let your
 
 ### Meta?
 
-So TCO is cool, right? But what does any of this have to do with meta programming? Great question. You're totally right to ask that!
-
-Short answer: I'm stretching the definition of "meta programming" to fit the TCO topic into this chapter. But there's more to it than artistic license!
+What does TCO have to do with meta programming?
 
 As we covered in the "Feature Testing" section earlier, you can determine at runtime what features an engine supports. This includes TCO, though determining it is quite brute force. Consider:
 
@@ -1210,7 +1210,7 @@ As we covered in the "Feature Testing" section earlier, you can determine at run
 
 try {
 	(function foo(x){
-		if (x < 5E5) foo( x + 1 );
+		if (x < 5E5) return foo( x + 1 );
 	})( 1 );
 
 	TCO_ENABLED = true;
@@ -1238,7 +1238,7 @@ function foo(x) {
 		if (x > 1) {
 			acc = acc + (x / 2);
 			x = x - 1;
-			_foo();
+			return _foo();
 		}
 	}
 

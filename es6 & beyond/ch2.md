@@ -176,6 +176,8 @@ funcs[3]();		// 3
 
 Here, we forcibly create a new `j` for each iteration, and then the closure works the same way. I prefer the former approach; that extra special capability is why I endorse the `for (let .. ) ..` form. It could be argued it's somewhat more *implicit*, but it's *explicit* enough, and useful enough, for my tastes.
 
+`let` also works the same way with `for..in` and `for..of` loops (see "`for..of` Loops").
+
 ### `const` Declarations
 
 There's one other form of block-scoped declaration to consider: the `const`, which creates *constants*.
@@ -210,6 +212,8 @@ The `a` variable doesn't actually hold a constant array; rather, it holds a cons
 **Warning:** Assigning an object or array as a constant means that value will not be able to be garbage collected until that constant's lexical scope goes away, as the reference to the value can never be unset. That may be desirable, but be careful if it's not your intent!
 
 Essentially, `const` declarations enforce what we've stylistically signaled with our code for years, where we declared a variable name of all uppercase letters and assigned it some literal value that we took care never to change. There's no enforcement on a `var` assignment, but there is now with a `const` assignment, which can help you catch unintended changes.
+
+`const` *can* be used with variable declarations of `for`, `for..in`, and `for..of` loops (see "`for..of` Loops"). However, an error will be thrown if there's any attempt to reassign, such as the typical `i++` clause of a `for` loop.
 
 #### `const` Or Not
 
@@ -563,9 +567,7 @@ console.log( x, y, z );				// 4 5 6
 
 The `tmp.x` property value is assigned to the `x` variable, and likewise for `tmp.y` to `y` and `tmp.z` to `z`.
 
-Manually assigning indexed values from an array or properties from an object can be thought of as *structured assignment*. To put this into ES6 terms, it's called *destructuring assignment*.
-
-Specifically, ES6 introduces dedicated syntax for *array destructuring* and *object destructuring*, which eliminates the need for the `tmp` variable in the previous snippets, making them much cleaner. Consider:
+Manually assigning indexed values from an array or properties from an object can be thought of as *structured assignment*. ES6 adds a dedicated syntax for *destructuring*, specifically *array destructuring* and *object destructuring*. This syntax eliminates the need for the `tmp` variable in the previous snippets, making them much cleaner. Consider:
 
 ```js
 var [ a, b, c ] = foo();
@@ -593,7 +595,7 @@ console.log( x, y, z );				// 4 5 6
 
 Pretty cool, right?
 
-But is `{ x, .. }` leaving off the `x: ` part or leaving off the `: x` part? As we'll see shortly, we're actually leaving off the `x: ` part when we use the shorter syntax. That may not seem like an important detail, but you'll understand its importance.
+But is `{ x, .. }` leaving off the `x: ` part or leaving off the `: x` part? We're actually leaving off the `x: ` part when we use the shorter syntax. That may not seem like an important detail, but you'll understand its importance in just a moment.
 
 If you can write the shorter form, why would you ever write out the longer form? Because that longer form actually allows you to assign a property to a different variable name, which can sometimes be quite useful:
 
@@ -624,7 +626,7 @@ Recall:
 var { x: bam, y: baz, z: bap } = bar();
 ```
 
-The syntactic pattern here is `source: target` (or `value: variable-alias`). `x: bam` means the `x` property is the source value and `bam` is the target variable to assign to. In other words, object literals are `target <= source`, and object destructuring assignments are `source => target`. See how that's flipped?
+The syntactic pattern here is `source: target` (or `value: variable-alias`). `x: bam` means the `x` property is the source value and `bam` is the target variable to assign to. In other words, object literals are `target <-- source`, and object destructuring assignments are `source --> target`. See how that's flipped?
 
 There's another way to think about this syntax though, which may help ease the confusion. Consider:
 
@@ -639,7 +641,7 @@ console.log( AA, BB );				// 10 20
 
 In the `{ x: aa, y: bb }` line, the `x` and `y` represent the object properties. In the `{ x: AA, y: BB }` line, the `x` and the `y` *also* represent the object properties.
 
-Recall how earlier I asserted that `{ x, .. }` was leaving off the `x: ` part? In those two lines, if you erase the `x: ` and `y: ` parts in that snippet, you're left only with `aa`, `bb`, `AA`, and `BB`, which in effect are assignments from `aa` to `AA` and from `bb` to `BB`. That's actually what we've accomplished with the snippet.
+Recall how earlier I asserted that `{ x, .. }` was leaving off the `x: ` part? In those two lines, if you erase the `x: ` and `y: ` parts in that snippet, you're left only with `aa, bb` and `AA, BB`, which in effect -- only conceptually, not actually -- are assignments from `aa` to `AA` and from `bb` to `BB`.
 
 So, that symmetry may help to explain why the syntactic pattern was intentionally flipped for this ES6 feature.
 
@@ -665,7 +667,7 @@ The variables can already be declared, and then the destructuring only does assi
 
 **Note:** For the object destructuring form specifically, when leaving off a `var`/`let`/`const` declarator, we had to surround the whole assignment expression in `( )`, because otherwise the `{ .. }` on the lefthand side as the first element in the statement is taken to be a block statement instead of an object.
 
-In fact, the assignment expressions (`a`, `y`, etc.) don't actually need to be just variable identifiers. Anything that's a valid assignment expression is valid. For example:
+In fact, the assignment expressions (`a`, `y`, etc.) don't actually need to be just variable identifiers. Anything that's a valid assignment expression is allowed. For example:
 
 ```js
 var o = {};
@@ -744,7 +746,55 @@ var x = 10, y = 20;
 console.log( x, y );				// 20 10
 ```
 
-**Warning:** Be careful: you shouldn't to mix in declaration with assignment unless you want all of the assignment expressions *also* to be treated as declarations. Otherwise, you'll get syntax errors. That's why in the earlier example I had to do `var a2 = []` separately from the `[ a2[0], .. ] = ..` destructuring assignment. It wouldn't make any sense to try `var [ a2[0], .. ] = ..`, because `a2[0]` isn't a valid declaration identifier; it also obviously couldn't implicitly create a `var a2 = []` declaration.
+**Warning:** Be careful: you shouldn't mix in declaration with assignment unless you want all of the assignment expressions *also* to be treated as declarations. Otherwise, you'll get syntax errors. That's why in the earlier example I had to do `var a2 = []` separately from the `[ a2[0], .. ] = ..` destructuring assignment. It wouldn't make any sense to try `var [ a2[0], .. ] = ..`, because `a2[0]` isn't a valid declaration identifier; it also obviously couldn't implicitly create a `var a2 = []` declaration to use.
+
+### Repeated Assignments
+
+The object destructuring form allows a source property (holding any value type) to be listed multiple times. For example:
+
+```js
+var { a: X, a: Y } = { a: 1 };
+
+X;	// 1
+Y;	// 1
+```
+
+That also means you can both destructure a sub-object/array property and also capture the sub-object/array's value itself. Consider:
+
+```js
+var { a: { x: X, x: Y }, a } = { a: { x: 1 } };
+
+X;	// 1
+Y;	// 1
+a;	// { x: 1 }
+
+( { a: X, a: Y, a: [ Z ] } = { a: [ 1 ] } );
+
+X.push( 2 );
+Y[0] = 10;
+
+X;	// [10,2]
+Y;	// [10,2]
+Z;	// 1
+```
+
+A word of caution about destructuring: it may be tempting to list destructuring assignments all on a single line as has been done thus far in our discussion. However, it's a much better idea to spread destructuring assignment patterns over multiple lines, using proper indentation -- much like you would in JSON or with an object literal value -- for readability sake.
+
+```js
+// harder to read:
+var { a: { b: [ c, d ], e: { f } }, g } = obj;
+
+// better:
+var {
+	a: {
+		b: [ c, d ],
+		e: { f }
+	},
+	g
+} = obj;
+```
+
+Remember: **the purpose of destructuring is not just less typing, but more declarative readability.**
 
 #### Destructuring Assignment Expressions
 
@@ -754,7 +804,7 @@ The assignment expression with object or array destructuring has as its completi
 var o = { a:1, b:2, c:3 },
 	a, b, c, p;
 
-p = {a,b,c} = o;
+p = { a, b, c } = o;
 
 console.log( a, b, c );			// 1 2 3
 p === o;						// true
@@ -766,7 +816,7 @@ In the previous snippet, `p` was assigned the `o` object reference, not one of t
 var o = [1,2,3],
 	a, b, c, p;
 
-p = [a,b,c] = o;
+p = [ a, b, c ] = o;
 
 console.log( a, b, c );			// 1 2 3
 p === o;						// true
@@ -779,7 +829,7 @@ var o = { a:1, b:2, c:3 },
 	p = [4,5,6],
 	a, b, c, x, y, z;
 
-({a} = {b,c} = o);
+( {a} = {b,c} = o );
 [x,y] = [z] = p;
 
 console.log( a, b, c );			// 1 2 3
@@ -826,7 +876,7 @@ Here we see that `...a` is spreading `a` out, because it appears in the array `[
 
 ```js
 var a = [2,3,4];
-var [b, ...c] = a;
+var [ b, ...c ] = a;
 
 console.log( b, c );				// 2 [3,4]
 ```
@@ -1959,13 +2009,13 @@ for (var val, i = 0; i < k.length; i++) {
 // "a" "b" "c" "d" "e"
 ```
 
-And here's the ES6 but non-`for..of` equivalent, which also gives a glimpse at manually iterating an iterator:
+And here's the ES6 but non-`for..of` equivalent, which also gives a glimpse at manually iterating an iterator (see "Iterators" in Chapter 3):
 
 ```js
 var a = ["a","b","c","d","e"];
 
 for (var val, ret, it = a[Symbol.iterator]();
-	!(ret = it.next()) && !ret.done;
+	(ret = it.next()) && !ret.done;
 ) {
 	val = ret.value;
 	console.log( val );

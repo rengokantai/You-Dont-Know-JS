@@ -1,7 +1,9 @@
 # You Don't Know JS: ES6 & Beyond
 # Chapter 3: Organization
 
-Some of the most important changes in ES6 involve improved support for the patterns we already commonly use to organize JavaScript functionality. This chapter will explore iterators, generators, modules, and classes.
+It's one thing to write JS code, but it's another to properly organize it. Utilizing common patterns for organization and reuse goes a long way to improving the readability and understandability of your code. Remember: code is at least as much about communicating to other developers as it is about feeding the computer instructions.
+
+ES6 has several important features that help signficantly improve these patterns, including: iterators, generators, modules, and classes.
 
 ## Iterators
 
@@ -163,10 +165,10 @@ for (var v of it) {
 }
 ```
 
-To fully understand how such a loop works, let's consider this more manual version of the previous snippet's loop:
+To fully understand how such a loop works, recall the `for` equivalent of a `for..of` loop from Chapter 2:
 
 ```js
-for (var v, res; !(res = it.next()) && !res.done; ) {
+for (var v, res; (res = it.next()) && !res.done; ) {
 	v = res.value;
 	console.log( v );
 }
@@ -174,9 +176,9 @@ for (var v, res; !(res = it.next()) && !res.done; ) {
 
 If you look closely, you'll see that `it.next()` is called before each iteration, and then `res.done` is consulted. If `res.done` is `false`, the iteration doesn't occur.
 
-Recall earlier that we suggested iterators should in general not return `done: true` along with the final intended value from the iterator. Here you can see why.
+Recall earlier that we suggested iterators should in general not return `done: true` along with the final intended value from the iterator. Now you can see why.
 
-If an iterator returned `{ done: true, value: 42 }`, the `for..of` loop would completely discard the `42` value and it'd be unavailable. For this reason, assuming that your iterator may be consumed by patterns like the `for..of` loop or its manual equivalent, you should probably wait to return `done: true` for signaling completion until after you've already returned all relevant iteration values.
+If an iterator returned `{ done: true, value: 42 }`, the `for..of` loop would completely discard the `42` value and it'd be lost. For this reason, assuming that your iterator may be consumed by patterns like the `for..of` loop or its manual `for` equivalent, you should probably wait to return `done: true` for signaling completion until after you've already returned all relevant iteration values.
 
 **Warning:** You can, of course, intentionally design your iterator to return some relevant `value` at the same time as returning `done: true`. But don't do this unless you've documented that as the case, and thus implicitly forced consumers of your iterator to use a different pattern for iteration than is implied by `for..of` or its manual equivalent we depicted.
 
@@ -1952,27 +1954,36 @@ If `new.target` is `undefined`, you know the function was not called with `new`.
 
 When a subclass `Bar` extends a parent class `Foo`, we already observed that `Bar.prototype` is `[[Prototype]]`-linked to `Foo.prototype`. But additionally, `Bar()` is `[[Prototype]]`-linked to `Foo()`. That part may not have such an obvious reasoning.
 
-However, it's quite useful in the case where you declare `static` properties or methods for a class, as these are added directly to that class's function object, not to the function object's `prototype` object. Consider:
+However, it's quite useful in the case where you declare `static` methods (not just properties) for a class, as these are added directly to that class's function object, not to the function object's `prototype` object. Consider:
 
 ```js
 class Foo {
-	static answer = 42;
 	static cool() { console.log( "cool" ); }
-	// ..
+	wow() { console.log( "wow" ); }
 }
 
 class Bar extends Foo {
-	constructor() {
-		console.log( new.target.answer );
+	static awesome() {
+		super.cool();
+		console.log( "awesome" );
+	}
+	neat() {
+		super.wow();
+		console.log( "neat" );
 	}
 }
 
-Foo.answer;					// 42
-Bar.answer;					// 42
+Foo.cool();					// "cool"
+Bar.cool();					// "cool"
+Bar.awesome();				// "cool"
+							// "awesome"
 
-var b = new Bar();			// 42
-b.cool();					// "cool"
-b.answer;					// undefined -- `answer` is static on `Foo`
+var b = new Bar();
+b.neat();					// "wow"
+							// "neat"
+
+b.awesome;					// undefined
+b.cool;						// undefined
 ```
 
 Be careful not to get confused that `static` members are on the class's prototype chain. They're actually on the dual/parallel chain between the function constructors.
